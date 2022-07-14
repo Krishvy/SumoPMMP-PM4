@@ -1,24 +1,25 @@
+---
 name: SumoByMcMelonTV
 api: 4.0.0
 version: 1.0.0
 main: jack\sumo\Sumo
-
 permissions:
-      sumo.cmd.help:
-        description: Permission for /sumo help
-        default: op
-      sumo.cmd.create:
-        description: Permission for /sumo make
-        default: op
-      sumo.cmd.remove:
-        description: Permission for /sumo delete
-        default: op
-      sumo.cmd.set:
-        description: Permission for /sumo set
-        default: op
-      sumo.cmd.arenas:
-        description: Permission for /sumo arenas
-        default: op
-      sumo.cmd.join:
-        description: Permission for /sumo join
-        default: true
+  sumo.cmd.help:
+    description: Permission for /sumo help
+    default: op
+  sumo.cmd.create:
+    description: Permission for /sumo make
+    default: op
+  sumo.cmd.remove:
+    description: Permission for /sumo delete
+    default: op
+  sumo.cmd.set:
+    description: Permission for /sumo set
+    default: op
+  sumo.cmd.arenas:
+    description: Permission for /sumo arenas
+    default: op
+  sumo.cmd.join:
+    description: Permission for /sumo join
+    default: true
+...

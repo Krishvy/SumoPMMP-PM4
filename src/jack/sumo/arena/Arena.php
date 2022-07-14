@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace jack\sumo\arena;
 
-use pocketmine\block\Block;
-use pocketmine\event\entity\EntityWorldChangeEvent;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\entity\effect\EffectInstance;
-use pocketmine\effect\VanillaEffects;
+use pocketmine\entity\effect\VanillaEffects;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerDeathEvent;
 use pocketmine\event\player\PlayerExhaustEvent;
@@ -15,7 +15,7 @@ use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\event\player\PlayerRespawnEvent;
-use pocketmine\item\VanillaItems;
+use pocketmine\player\GameMode;
 use pocketmine\world\World;
 use pocketmine\world\Position;
 use pocketmine\player\Player;
@@ -121,11 +121,11 @@ class Arena implements Listener {
         $player->getInventory()->clearAll();
         $player->getArmorInventory()->clearAll();
         $player->getCursorInventory()->clearAll();
-        $player->addEffect(new EffectInstance(VanillaEffects::REGENERATION, (99999999*20), (3), (false)));
+        $player->getEffects()->add(new EffectInstance(VanillaEffects::REGENERATION(), (99999999*20), (3), (false)));
 
-        $player->setGamemode($player::ADVENTURE);
+        $player->setGamemode(GameMode::ADVENTURE());
         $player->setHealth(20);
-        $player->setFood(20);
+        $player->getHungerManager()->setFood(20);
 
     }
 
@@ -154,7 +154,7 @@ class Arena implements Listener {
 
         $player->getEffects()->clear();
 
-        $player->setGamemode($this->plugin->getServer()->getDefaultGamemode());
+        $player->setGamemode($this->plugin->getServer()->getGamemode());
 
         $player->setHealth(20);
         $player->getHungerManager()->setFood(20);
@@ -197,8 +197,8 @@ class Arena implements Listener {
             return;
         }
 
-        $player->addTitle("§bY§ao§6u §dw§4o§1n§6!");
-        $this->plugin->getServer()->getPluginManager()->callEvent(new PlayerArenaWinEvent($this->plugin, $player, $this));
+        $player->sendTitle("§bY§ao§6u §dw§4o§1n§6!");
+        (new PlayerArenaWinEvent($this->plugin, $player, $this))->call();
         $this->plugin->getServer()->broadcastMessage("§l§bSumo §r§l>> §r§ePlayer {$player->getName()} won the game in map: {$this->level->getFolderName()}!");
         $this->phase = self::PHASE_RESTART;
     }
@@ -240,7 +240,7 @@ class Arena implements Listener {
                     $player->sendPopup($message);
                     break;
                 case self::MSG_TITLE:
-                    $player->addTitle($message, $subMessage);
+                    $player->sendTitle($message, $subMessage);
                     break;
             }
         }
@@ -266,8 +266,8 @@ class Arena implements Listener {
                     $index = $i;
                 }
             }
-            if($event->getPlayer()->asVector3()->distance(Vector3::fromString($this->data["spawns"][$index])) > 1) {
-                // $event->setCancelled() will not work
+            if($event->getPlayer()->getLocation()->asVector3()->distance(Vector3::fromString($this->data["spawns"][$index])) > 1) {
+                // $event->cancel() will not work
                 $player->teleport(Vector3::fromString($this->data["spawns"][$index]));
             }
         }
@@ -293,18 +293,18 @@ class Arena implements Listener {
         $player = $event->getPlayer();
         $block = $event->getBlock();
 
-        if($this->inGame($player) && $event->getBlock()->getId() == Block::CHEST && $this->phase == self::PHASE_LOBBY) {
+        if($this->inGame($player) && $event->getBlock()->getId() == VanillaBlocks::CHEST()->getId() && $this->phase == self::PHASE_LOBBY) {
             $event->cancel(true);
             return;
         }
 
-        if(!$block->getPosition()->getWorld()->getTile($block) instanceof Tile) {
+        if(!$block->getPosition()->getWorld()->getTile($block->getPosition()->asVector3()) instanceof Tile) {
             return;
         }
 
         $signPos = Position::fromObject(Vector3::fromString($this->data["joinsign"][0]), $this->plugin->getServer()->getWorldManager()->getWorldByName($this->data["joinsign"][1]));
 
-        if((!$signPos->equals($block)) || $signPos->getPosition()->getWorld()->getId() != $block->getPosition()->getWorld()->getId()) {
+        if((!$signPos->equals($block->getPosition()->asVector3())) || $signPos->getWorld()->getId() != $block->getPosition()->getWorld()->getId()) {
             return;
         }
 
@@ -333,7 +333,7 @@ class Arena implements Listener {
         if(!$this->inGame($player)) return;
 
         foreach ($event->getDrops() as $item) {
-            $player->getWorld()->dropItem($player, $item);
+            $player->getWorld()->dropItem($player->getLocation()->asVector3(), $item);
         }
         $this->toRespawn[$player->getName()] = $player;
         $this->disconnectPlayer($player, "", true);
@@ -362,7 +362,7 @@ class Arena implements Listener {
         }
     }
 
-    public function onLevelChange(EntityWorldChangeEvent $event) {
+    public function onWorldChange(EntityTeleportEvent $event) {
         $player = $event->getEntity();
         if(!$player instanceof Player) return;
         if($this->inGame($player)) {

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace jack\sumo\arena;
 
-use pocketmine\level\Level;
-use pocketmine\level\Position;
-use pocketmine\level\sound\AnvilUseSound;
-use pocketmine\level\sound\ClickSound;
 use pocketmine\scheduler\Task;
-use pocketmine\tile\Sign;
 use jack\sumo\math\Time;
 use jack\sumo\math\Vector3;
+use pocketmine\world\Position;
+use pocketmine\world\sound\AnvilUseSound;
+use pocketmine\world\sound\ClickSound;
+use pocketmine\world\World;
 
 /**
  * Class ArenaScheduler
@@ -45,7 +44,8 @@ class ArenaScheduler extends Task {
     /**
      * @param int $currentTick
      */
-    public function onRun(int $currentTick) {
+    public function onRun(): void
+    {
         $this->reloadSign();
 
         if($this->plugin->setup) return;
@@ -58,12 +58,12 @@ class ArenaScheduler extends Task {
                     if($this->startTime == 0) {
                         $this->plugin->startGame();
                         foreach ($this->plugin->players as $player) {
-                            $this->plugin->level->addSound(new AnvilUseSound($player->asVector3()));
+                            $this->plugin->level->addSound($player->getLocation()->asVector3(), new AnvilUseSound());
                         }
                     }
                     else {
                         foreach ($this->plugin->players as $player) {
-                            $this->plugin->level->addSound(new ClickSound($player->asVector3()));
+                            $this->plugin->level->addSound($player->getLocation()->asVector3(), new ClickSound());
                         }
                     }
                 }
@@ -85,16 +85,16 @@ class ArenaScheduler extends Task {
                     case 0:
 
                         foreach ($this->plugin->players as $player) {
-                            $player->teleport($this->plugin->plugin->getServer()->getDefaultLevel()->getSpawnLocation());
+                            $player->teleport($this->plugin->plugin->getServer()->getWorldManager()->getDefaultWorld()->getSpawnLocation());
 
                             $player->getInventory()->clearAll();
                             $player->getArmorInventory()->clearAll();
                             $player->getCursorInventory()->clearAll();
 
-                            $player->setFood(20);
+                            $player->getHungerManager()->setFood(20);
                             $player->setHealth(20);
 
-                            $player->setGamemode($this->plugin->plugin->getServer()->getDefaultGamemode());
+                            $player->setGamemode($this->plugin->plugin->getServer()->getGamemode());
                         }
                         $this->plugin->loadArena(true);
                         $this->reloadTimer();
@@ -107,9 +107,9 @@ class ArenaScheduler extends Task {
     public function reloadSign() {
         if(!is_array($this->plugin->data["joinsign"]) || empty($this->plugin->data["joinsign"])) return;
 
-        $signPos = Position::fromObject(Vector3::fromString($this->plugin->data["joinsign"][0]), $this->plugin->plugin->getServer()->getLevelByName($this->plugin->data["joinsign"][1]));
+        $signPos = Position::fromObject(Vector3::fromString($this->plugin->data["joinsign"][0]), $this->plugin->plugin->getServer()->getWorldManager()->getWorldByName($this->plugin->data["joinsign"][1]));
 
-        if(!$signPos->getLevel() instanceof Level) return;
+        if(!$signPos->getWorld() instanceof World) return;
 
         $signText = [
             "§6§lSumo",
@@ -118,11 +118,11 @@ class ArenaScheduler extends Task {
             "§cWait for few sec..."
         ];
 
-        if($signPos->getLevel()->getTile($signPos) === null) return;
+        if($signPos->getWorld()->getTile($signPos) === null) return;
 
         if($this->plugin->setup) {
             /** @var Sign $sign */
-            $sign = $signPos->getLevel()->getTile($signPos);
+            $sign = $signPos->getWorld()->getTile($signPos);
             $sign->setText($signText[0], $signText[1], $signText[2], $signText[3]);
             return;
         }
@@ -151,7 +151,7 @@ class ArenaScheduler extends Task {
         }
 
         /** @var Sign $sign */
-        $sign = $signPos->getLevel()->getTile($signPos);
+        $sign = $signPos->getWorld()->getTile($signPos);
         $sign->setText($signText[0], $signText[1], $signText[2], $signText[3]);
     }
 

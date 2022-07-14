@@ -91,7 +91,7 @@ class SumoCommand extends Command {
                 $arena = $this->plugin->arenas[$args[1]];
 
                 foreach ($arena->players as $player) {
-                    $player->teleport($this->plugin->getWorldManager()->getDefaultWorld()->getSafeSpawn());
+                    $player->teleport($this->plugin->getServer()->getWorldManager()->getDefaultWorld()->getSafeSpawn());
                 }
 
                 if(is_file($file = $this->plugin->getDataFolder() . "arenas" . DIRECTORY_SEPARATOR . $args[1] . ".yml")) unlink($file);

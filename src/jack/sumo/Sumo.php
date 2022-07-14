@@ -39,18 +39,18 @@ class Sumo extends PluginBase implements Listener {
     /** @var int[] $setupData */
     public $setupData = [];
 
-    public function onLoad(): void {
+    protected function onLoad(): void{
         $this->dataProvider = new YamlDataProvider($this);
     }
 
-    public function onEnable(): void {
+    protected function onEnable(): void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $this->dataProvider->loadArenas();
         $this->emptyArenaChooser = new EmptyArenaChooser($this);
         $this->getServer()->getCommandMap()->register("sumo", $this->commands[] = new SumoCommand($this));
     }
 
-    public function onDisable(): void {
+    protected function onDisable(): void{
         $this->dataProvider->saveArenas();
     }
 
@@ -147,7 +147,7 @@ class Sumo extends PluginBase implements Listener {
         if(isset($this->setupData[$player->getName()])) {
             switch ($this->setupData[$player->getName()]) {
                 case 0:
-                    $this->setters[$player->getName()]->data["joinsign"] = [(new Vector3($block->getLocation()->getX(), $block->getLocation()->getY(), $block->getLocation()->getZ()))->__toString(), $block->getPosition()->getWorld()->getFolderName()];
+                    $this->setters[$player->getName()]->data["joinsign"] = [(new Vector3($block->getPosition()->getX(), $block->getPosition()->getY(), $block->getPosition()->getZ()))->__toString(), $block->getPosition()->getWorld()->getFolderName()];
                     $player->sendMessage("§aJoin sign updated!");
                     unset($this->setupData[$player->getName()]);
                     $event->cancel();
